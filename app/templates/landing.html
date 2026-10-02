@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Enterprise 2FA & Secure Project Repository{% endblock %}
+
+{% block content %}
+<div class="py-5">
+    <div class="row align-items-center g-5 mb-5">
+        <div class="col-lg-7">
+            <div class="badge-cyber cyan mb-3">
+                <i class="fas fa-shield-virus"></i> ZERO-TRUST STORAGE ARCHITECTURE
+            </div>
+            <h1 class="display-4 fw-extrabold mb-3" style="line-height: 1.15;">
+                Fortified Project Vault with <span style="background: linear-gradient(135deg, #00f2fe 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Mandatory 2FA</span>
+            </h1>
+            <p class="lead text-secondary mb-4" style="font-size: 1.15rem;">
+                Securely store, organize, version, and manage your source code, archives, and project files. Protected by Google and Microsoft Authenticator TOTP verification, Argon2id encryption, and storage isolation.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-cyber-primary btn-lg px-4">
+                    <i class="fas fa-user-plus"></i> Create Secure Account
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-cyber-secondary btn-lg px-4">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Member Login
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-5 text-center">
+            <div class="cyber-card p-4 text-start position-relative">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="rounded-circle bg-danger" style="width: 12px; height: 12px;"></span>
+                        <span class="rounded-circle bg-warning" style="width: 12px; height: 12px;"></span>
+                        <span class="rounded-circle bg-success" style="width: 12px; height: 12px;"></span>
+                    </div>
+                    <span class="badge-cyber emerald"><i class="fas fa-lock"></i> Protected</span>
+                </div>
+                <div class="font-monospace small text-muted mb-2">// 2FA TOTP Handshake Status</div>
+                <div class="p-3 rounded bg-dark border border-secondary mb-3 font-monospace small">
+                    <div class="text-success"><i class="fas fa-check me-2"></i> Argon2id Password Verified</div>
+                    <div class="text-info mt-1"><i class="fas fa-circle-notch fa-spin me-2"></i> TOTP 6-Digit Code Verified</div>
+                    <div class="text-success mt-1"><i class="fas fa-check me-2"></i> Fernet At-Rest Decryption Passed</div>
+                    <div class="text-warning mt-1"><i class="fas fa-shield me-2"></i> Path Traversal Filter Active</div>
+                </div>
+                <div class="text-secondary small">
+                    <i class="fas fa-circle-info text-info me-1"></i> Multi-tenant isolation ensures zero cross-user access to projects or files.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Highlights -->
+    <div class="row g-4 mt-4">
+        <div class="col-md-4">
+            <div class="cyber-card h-100">
+                <div class="stat-icon cyan mb-3">
+                    <i class="fas fa-mobile-screen-button"></i>
+                </div>
+                <h4>Authenticator 2FA</h4>
+                <p class="text-secondary small mb-0">
+                    Seamless integration with Google Authenticator and Microsoft Authenticator via standard RFC 6238 TOTP protocols, with replay attack mitigation.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="cyber-card h-100">
+                <div class="stat-icon blue mb-3">
+                    <i class="fas fa-box-archive"></i>
+                </div>
+                <h4>Private Project Storage</h4>
+                <p class="text-secondary small mb-0">
+                    Store ZIP archives, Python scripts, JavaScript modules, PDFs, and assets outside publicly accessible static folders with randomized storage tokens.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="cyber-card h-100">
+                <div class="stat-icon emerald mb-3">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <h4>Integrity & Versioning</h4>
+                <p class="text-secondary small mb-0">
+                    Cryptographic SHA-256 checksums verify that files are never tampered with. Track change descriptions and version history across all project releases.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

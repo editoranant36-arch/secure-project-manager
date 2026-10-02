@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Upload New Project - Secure Vault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-2">
+    <div class="col-lg-9 col-xl-8">
+        <div class="cyber-card">
+            <div class="cyber-card-header mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1"><i class="fas fa-cloud-arrow-up text-info me-2"></i>Upload New Project</h3>
+                    <p class="text-secondary small mb-0">Deposit code, documents, or ZIP packages into isolated personal storage.</p>
+                </div>
+                <a href="{{ url_for('projects.list_projects') }}" class="btn btn-cyber-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Projects
+                </a>
+            </div>
+
+            <form method="POST" action="{{ url_for('projects.upload_project') }}" enctype="multipart/form-data" id="projectUploadForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-7">
+                        <label class="form-label" for="projectName">Project Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="projectName" name="project_name" placeholder="e.g. Sentinel Network Scanner" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="projectCategory">Category</label>
+                        <select class="form-select" id="projectCategory" name="category">
+                            <option value="Cyber Security" selected>Cyber Security</option>
+                            <option value="Web Development">Web Development</option>
+                            <option value="AI & Machine Learning">AI & Machine Learning</option>
+                            <option value="Cloud Infrastructure">Cloud Infrastructure</option>
+                            <option value="Mobile App">Mobile App</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="projectVersion">Version</label>
+                        <input type="text" class="form-control font-monospace" id="projectVersion" name="version" value="1.0.0" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="projectDescription">Project Description</label>
+                    <textarea class="form-control" id="projectDescription" name="description" rows="3" placeholder="Explain the project scope, architecture, or deployment instructions..."></textarea>
+                </div>
+
+                <!-- Drag-and-Drop Zone -->
+                <div class="mb-4">
+                    <label class="form-label">Project Files & Archives</label>
+                    <div class="dropzone-container" id="dropzone">
+                        <i class="fas fa-cloud-arrow-up dropzone-icon"></i>
+                        <h5 class="fw-bold mb-1">Drag and drop project files here</h5>
+                        <p class="text-secondary small mb-3">or click this area to browse your file system</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <span class="badge bg-dark border border-secondary text-info">.ZIP</span>
+                            <span class="badge bg-dark border border-secondary text-info">.TAR.GZ</span>
+                            <span class="badge bg-dark border border-secondary text-info">.PY</span>
+                            <span class="badge bg-dark border border-secondary text-info">.JS</span>
+                            <span class="badge bg-dark border border-secondary text-info">.HTML/.CSS</span>
+                            <span class="badge bg-dark border border-secondary text-info">.PDF</span>
+                            <span class="badge bg-dark border border-secondary text-info">.PNG/.JPG</span>
+                        </div>
+                        <input type="file" id="projectFilesInput" name="files" multiple class="d-none">
+                    </div>
+                    <div class="form-text text-muted small mt-2">
+                        <i class="fas fa-circle-exclamation text-warning me-1"></i> Maximum 50MB per upload. Executables (.exe, .sh, .bin) are restricted for safety.
+                    </div>
+
+                    <!-- Selected Files Preview Container -->
+                    <div id="selectedFilesList"></div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top border-secondary">
+                    <a href="{{ url_for('projects.list_projects') }}" class="btn btn-cyber-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-cyber-primary px-4">
+                        <i class="fas fa-lock me-2"></i> Save & Secure Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

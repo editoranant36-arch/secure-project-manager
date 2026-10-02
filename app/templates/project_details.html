@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.project_name }} - Project Details{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-2 border-bottom border-secondary">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <a href="{{ url_for('projects.list_projects') }}" class="text-secondary me-1"><i class="fas fa-arrow-left"></i></a>
+            <h2 class="fw-bold mb-0">{{ project.project_name }}</h2>
+            <span class="badge-cyber cyan font-monospace">v{{ project.version }}</span>
+            <span class="badge bg-secondary">{{ project.category }}</span>
+        </div>
+        <p class="text-secondary small mb-0">Project ID: #{{ project.id }} &bull; Created {{ project.created_at | datetimeformat }} &bull; Last updated {{ project.updated_at | datetimeformat }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('projects.download_project_archive', project_id=project.id) }}" class="btn btn-cyber-secondary">
+            <i class="fas fa-file-zipper text-info"></i> Download All (ZIP)
+        </a>
+        <button type="button" class="btn btn-cyber-primary" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+            <i class="fas fa-plus"></i> Add Files
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editProjectModal">
+            <i class="fas fa-pen"></i> Edit
+        </button>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteProjectModal">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <!-- Project Description & Overview -->
+        <div class="cyber-card mb-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-circle-info text-info me-2"></i>About this Project</h5>
+            <p class="text-secondary mb-0" style="white-space: pre-line;">
+                {{ project.description or 'No project description entered.' }}
+            </p>
+        </div>
+
+        <!-- Files Listing Table -->
+        <div class="cyber-card">
+            <div class="cyber-card-header">
+                <h5 class="fw-bold mb-0">
+                    <i class="fas fa-file-shield text-info me-2"></i>Attached Files ({{ files|length }})
+                </h5>
+                <span class="small font-monospace text-muted">Total: {{ project.total_size() | filesizeformat }}</span>
+            </div>
+
+            {% if files %}
+                <div class="table-responsive">
+                    <table class="table table-cyber align-middle">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>SHA-256 Integrity Checksum</th>
+                                <th>Uploaded</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for f in files %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fas fa-file-code text-info"></i>
+                                            <span class="fw-semibold">{{ f.original_filename }}</span>
+                                        </div>
+                                        <div class="text-muted small font-monospace">{{ f.mime_type or 'binary' }}</div>
+                                    </td>
+                                    <td class="font-monospace small">{{ f.file_size | filesizeformat }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <span class="checksum-pill" title="{{ f.checksum }}">{{ f.checksum }}</span>
+                                            <button class="btn btn-sm btn-link text-secondary p-0 copy-btn" data-clipboard-target="#chk{{ f.id }}" title="Copy checksum">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <input type="hidden" id="chk{{ f.id }}" value="{{ f.checksum }}">
+                                        </div>
+                                    </td>
+                                    <td class="text-muted small">{{ f.uploaded_at | datetimeformat('%b %d, %H:%M') }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('projects.download_project_file', project_id=project.id, file_id=f.id) }}" class="btn btn-outline-info" title="Download securely">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('projects.delete_file_route', project_id=project.id, file_id=f.id) }}" class="d-inline" onsubmit="return confirm('Delete this file?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-outline-danger" title="Delete file">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-secondary">
+                    <p class="mb-2">No files uploaded yet for this project.</p>
+                    <button class="btn btn-cyber-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+                        <i class="fas fa-upload me-1"></i> Upload Files Now
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar: Versions & Release History -->
+    <div class="col-lg-4">
+        <div class="cyber-card mb-4">
+            <div class="cyber-card-header">
+                <h5 class="fw-bold mb-0"><i class="fas fa-code-branch text-info me-2"></i>Release History</h5>
+                <button class="btn btn-cyber-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#newVersionModal">
+                    <i class="fas fa-tag"></i> New Version
+                </button>
+            </div>
+
+            {% if versions %}
+                <div class="timeline mt-2">
+                    {% for v in versions %}
+                        <div class="timeline-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge-cyber cyan font-monospace">v{{ v.version_number }}</span>
+                                <span class="text-muted" style="font-size: 0.75rem;">{{ v.uploaded_at | datetimeformat }}</span>
+                            </div>
+                            <div class="text-secondary small">{{ v.change_description or 'No change details.' }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small mb-0">No version releases recorded.</p>
+            {% endif %}
+        </div>
+
+        <!-- Security & Storage Specs -->
+        <div class="cyber-card">
+            <h6 class="fw-bold text-uppercase text-secondary mb-3" style="font-size: 0.8rem; letter-spacing: 0.05em;">Vault Security Parameters</h6>
+            <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
+                <li class="d-flex justify-content-between">
+                    <span class="text-muted">Storage Isolation:</span>
+                    <span class="text-success"><i class="fas fa-check-circle"></i> User Sandbox</span>
+                </li>
+                <li class="d-flex justify-content-between">
+                    <span class="text-muted">Web Execution:</span>
+                    <span class="text-danger"><i class="fas fa-ban"></i> Disabled</span>
+                </li>
+                <li class="d-flex justify-content-between">
+                    <span class="text-muted">Integrity Algorithm:</span>
+                    <span class="font-monospace text-info">SHA-256</span>
+                </li>
+                <li class="d-flex justify-content-between">
+                    <span class="text-muted">Path Traversal Guard:</span>
+                    <span class="text-success"><i class="fas fa-shield"></i> Active</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Upload Files to Project -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('projects.upload_file_to_project_route', project_id=project.id) }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-cloud-arrow-up text-info me-2"></i>Add Files to Project</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Files (ZIP, PY, JS, HTML, PDF, etc.)</label>
+                        <input type="file" name="files" multiple class="form-control" required>
+                        <div class="form-text text-muted small">Max 50MB per upload. Checksums generated on save.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-cyber-primary">Upload & Encrypt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Project -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('projects.edit_project', project_id=project.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-pen-to-square text-info me-2"></i>Edit Project Metadata</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="editProjectName">Project Name</label>
+                        <input type="text" class="form-control" id="editProjectName" name="project_name" value="{{ project.project_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="editCategory">Category</label>
+                        <input type="text" class="form-control" id="editCategory" name="category" value="{{ project.category }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="editVersion">Version</label>
+                        <input type="text" class="form-control font-monospace" id="editVersion" name="version" value="{{ project.version }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="editDesc">Description</label>
+                        <textarea class="form-control" id="editDesc" name="description" rows="3">{{ project.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-cyber-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Version -->
+<div class="modal fade" id="newVersionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('projects.add_version', project_id=project.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-tag text-info me-2"></i>Create New Version Release</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Version Number</label>
+                        <input type="text" class="form-control font-monospace" name="version_number" placeholder="e.g. 1.1.0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Change Log / Release Notes</label>
+                        <textarea class="form-control" name="change_description" rows="3" placeholder="Describe fixes, enhancements, or breaking changes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-cyber-primary">Record Version</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Project Confirmation -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fas fa-triangle-exclamation me-2"></i>Delete Project</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete <strong>{{ project.project_name }}</strong> and all its {{ files|length }} files?</p>
+                <p class="text-secondary small mb-0">This operation cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('projects.delete_project_route', project_id=project.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-cyber-danger">Yes, Delete Project</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

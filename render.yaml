@@ -1,0 +1,30 @@
+databases:
+  - name: secure-pm-postgres
+    databaseName: spm_db
+    user: spm_user
+    plan: free
+
+services:
+  - type: web
+    name: secure-project-manager
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --worker-class gthread run:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FERNET_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secure-pm-postgres
+          property: connectionString
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SESSION_COOKIE_SAMESITE
+        value: "Lax"

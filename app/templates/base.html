@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Secure Project Manager{% endblock %} | 2FA Protected</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Custom Cyber CSS -->
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand" href="{{ url_for('dashboard.index') if current_user.is_authenticated and session.get('2fa_verified') else url_for('dashboard.landing') }}">
+                <div class="brand-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <span>CYBER<span style="color: var(--primary-cyan);">VAULT</span></span>
+            </a>
+
+            <button class="navbar-toggler border-0 text-light" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-2 mt-3 mt-lg-0">
+                    {% if current_user.is_authenticated and session.get('2fa_verified') %}
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link text-light" href="{{ url_for('dashboard.index') }}"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
+                        </li>
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link text-light" href="{{ url_for('projects.list_projects') }}"><i class="fas fa-folder-tree me-2"></i> Projects</a>
+                        </li>
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link text-light" href="{{ url_for('projects.upload_project') }}"><i class="fas fa-cloud-arrow-up me-2"></i> Upload</a>
+                        </li>
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link text-light" href="{{ url_for('security.profile') }}"><i class="fas fa-user-gear me-2"></i> Profile</a>
+                        </li>
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link text-light" href="{{ url_for('security.index') }}"><i class="fas fa-lock me-2"></i> Security (2FA)</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-light d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+                                <div class="rounded-circle bg-dark border border-info d-flex align-items-center justify-content-center text-info font-monospace fw-bold" style="width: 32px; height: 32px;">
+                                    {{ current_user.username[0].upper() }}
+                                </div>
+                                <span class="d-none d-md-inline">{{ current_user.full_name }}</span>
+                                <span class="badge-cyber emerald ms-1"><i class="fas fa-shield-check"></i> 2FA</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+                                <li><a class="dropdown-item text-light py-2" href="{{ url_for('security.profile') }}"><i class="fas fa-user-circle me-2 text-info"></i> Account Profile</a></li>
+                                <li><a class="dropdown-item text-light py-2" href="{{ url_for('security.index') }}"><i class="fas fa-key me-2 text-warning"></i> Security & 2FA</a></li>
+                                <li><hr class="dropdown-divider border-secondary"></li>
+                                <li><a class="dropdown-item text-danger py-2" href="{{ url_for('auth.logout') }}"><i class="fas fa-arrow-right-from-bracket me-2"></i> Sign Out</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-cyber-secondary btn-sm px-3" href="{{ url_for('auth.login') }}">
+                                <i class="fas fa-arrow-right-to-bracket"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-cyber-primary btn-sm px-3" href="{{ url_for('auth.register') }}">
+                                <i class="fas fa-user-plus"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- App Container -->
+    <div class="app-container">
+        {% if current_user.is_authenticated and session.get('2fa_verified') %}
+            <!-- Desktop Sidebar Navigation -->
+            <aside class="sidebar">
+                <div class="text-uppercase small text-muted fw-bold px-3 mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Core Workspace</div>
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('projects.list_projects') }}" class="sidebar-nav-link {% if request.endpoint in ['projects.list_projects', 'projects.project_details'] %}active{% endif %}">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Projects</span>
+                </a>
+                <a href="{{ url_for('projects.upload_project') }}" class="sidebar-nav-link {% if request.endpoint == 'projects.upload_project' %}active{% endif %}">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <span>Upload Project</span>
+                </a>
+
+                <div class="text-uppercase small text-muted fw-bold px-3 mt-4 mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Security & Access</div>
+                <a href="{{ url_for('security.profile') }}" class="sidebar-nav-link {% if request.endpoint == 'security.profile' %}active{% endif %}">
+                    <i class="fas fa-id-card"></i>
+                    <span>Profile Settings</span>
+                </a>
+                <a href="{{ url_for('security.index') }}" class="sidebar-nav-link {% if request.endpoint == 'security.index' %}active{% endif %}">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>2FA & Sessions</span>
+                </a>
+
+                <div class="mt-auto pt-4 border-top border-secondary">
+                    <div class="px-3 py-2 small text-muted">
+                        <div class="text-truncate text-light fw-bold">{{ current_user.username }}</div>
+                        <div class="d-flex align-items-center gap-1 mt-1 text-success">
+                            <i class="fas fa-circle" style="font-size: 8px;"></i>
+                            <span>TOTP Enforced</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="sidebar-nav-link text-danger mt-2">
+                        <i class="fas fa-arrow-right-from-bracket text-danger"></i>
+                        <span>Sign Out</span>
+                    </a>
+                </div>
+            </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Flash Message Alerts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-cyber alert-cyber-{{ 'danger' if category == 'danger' else ('success' if category == 'success' else ('warning' if category == 'warning' else 'info')) }} alert-dismissible fade show" role="alert">
+                            <i class="fas {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-triangle-exclamation{% elif category == 'warning' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} fs-5"></i>
+                            <div>{{ message }}</div>
+                            <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

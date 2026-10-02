@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}2FA Enrollment - Link Authenticator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-8 col-xl-7">
+        <div class="cyber-card">
+            <div class="text-center mb-4">
+                <div class="badge-cyber cyan mb-2">
+                    <i class="fas fa-key"></i> STEP 2: MULTI-FACTOR ENROLLMENT
+                </div>
+                <h3 class="fw-bold">Link Your Authenticator</h3>
+                <p class="text-secondary small">Compatible with Google Authenticator, Microsoft Authenticator, Authy, or 1Password</p>
+            </div>
+
+            <div class="row g-4 align-items-center mb-4">
+                <!-- QR Code Display -->
+                <div class="col-md-5 text-center">
+                    <div class="p-3 rounded bg-dark border border-secondary d-inline-block shadow">
+                        <img src="{{ qr_code }}" alt="TOTP QR Code" class="img-fluid rounded" style="max-width: 200px;">
+                    </div>
+                    <div class="text-muted small mt-2">
+                        <i class="fas fa-qrcode text-info me-1"></i> Scan with your phone camera or authenticator app
+                    </div>
+                </div>
+
+                <!-- Setup Steps -->
+                <div class="col-md-7">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-list-ol text-info me-2"></i>Setup Instructions</h5>
+                    <ol class="text-secondary small ps-3 mb-3 d-flex flex-column gap-2">
+                        <li>Open <strong>Google Authenticator</strong> or <strong>Microsoft Authenticator</strong> on your mobile device.</li>
+                        <li>Tap <strong>Add account (+)</strong> and choose <strong>Scan a QR code</strong>.</li>
+                        <li>If you cannot scan, manually enter the 32-character secret key below.</li>
+                    </ol>
+
+                    <div class="mb-3">
+                        <label class="form-label small">Manual Secret Entry Key</label>
+                        <div class="input-group">
+                            <input type="text" id="manualSecret" class="form-control font-monospace text-info bg-dark border-secondary" value="{{ secret }}" readonly>
+                            <button type="button" class="btn btn-outline-secondary copy-btn" data-clipboard-target="#manualSecret">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <div class="form-text text-muted small">Account: {{ user.username }} | Type: Time-based (TOTP 30s)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enrollment Verification Form -->
+            <div class="p-4 rounded bg-dark border border-secondary">
+                <h5 class="fw-bold text-center mb-2"><i class="fas fa-mobile-screen text-info me-2"></i>Verify 6-Digit Code</h5>
+                <p class="text-center text-secondary small mb-3">Enter the 6-digit verification code currently shown in your authenticator app to finalize enrollment.</p>
+
+                <form method="POST" action="{{ url_for('auth.setup_2fa') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="otp_code" id="fullOtpInput" value="">
+
+                    <!-- 6 Digit Boxes -->
+                    <div class="otp-container">
+                        <input type="text" maxlength="1" class="otp-digit" autofocus autocomplete="off" inputmode="numeric">
+                        <input type="text" maxlength="1" class="otp-digit" autocomplete="off" inputmode="numeric">
+                        <input type="text" maxlength="1" class="otp-digit" autocomplete="off" inputmode="numeric">
+                        <input type="text" maxlength="1" class="otp-digit" autocomplete="off" inputmode="numeric">
+                        <input type="text" maxlength="1" class="otp-digit" autocomplete="off" inputmode="numeric">
+                        <input type="text" maxlength="1" class="otp-digit" autocomplete="off" inputmode="numeric">
+                    </div>
+
+                    <button type="submit" class="btn btn-cyber-primary w-100 py-2 mt-2">
+                        <i class="fas fa-shield-check me-2"></i> Confirm Enrollment & Enable 2FA
+                    </button>
+                </form>
+            </div>
+
+            <div class="text-secondary small mt-4 text-center">
+                <i class="fas fa-lock text-warning me-1"></i> For your security, this secret key will not be displayed again once setup is completed.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

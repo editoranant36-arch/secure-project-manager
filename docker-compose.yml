@@ -1,0 +1,31 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=changethisinproduction_min32characters_long!
+      - FERNET_KEY=gl65wnTcNSa426cgDS6Vj_Bxiv7twvuLtNkxiHkNqx0=
+      - DATABASE_URL=postgresql://spm_user:spm_secure_password@db:5432/spm_db
+      - UPLOAD_FOLDER=/app/storage/uploads
+      - SESSION_COOKIE_SECURE=False  # Set to True when SSL reverse proxy is configured
+    volumes:
+      - project_storage:/app/storage/uploads
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=spm_user
+      - POSTGRES_PASSWORD=spm_secure_password
+      - POSTGRES_DB=spm_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  project_storage:
+  pgdata:

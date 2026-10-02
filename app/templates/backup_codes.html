@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Backup Recovery Codes{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-8 col-xl-7">
+        <div class="cyber-card">
+            <div class="text-center mb-4">
+                <div class="brand-icon mx-auto mb-3" style="width: 52px; height: 52px; font-size: 1.6rem; background: linear-gradient(135deg, #10b981 0%, #00f2fe 100%);">
+                    <i class="fas fa-file-shield"></i>
+                </div>
+                <h3 class="fw-bold">Emergency Backup Recovery Codes</h3>
+                <p class="text-secondary small">These codes allow you to regain access if you lose your authenticator device.</p>
+            </div>
+
+            <div class="alert-cyber alert-cyber-warning mb-4">
+                <i class="fas fa-triangle-exclamation fs-4"></i>
+                <div>
+                    <strong>IMPORTANT NOTICE:</strong> Save these backup codes in a secure password manager or offline location immediately. <strong>They will never be shown again!</strong> Each code can only be used once.
+                </div>
+            </div>
+
+            <div class="p-4 rounded bg-dark border border-secondary mb-4">
+                <div class="row g-3" id="backupCodesContainer">
+                    {% for code in backup_codes %}
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 text-center rounded bg-darker border border-secondary font-monospace fw-bold text-info" style="font-size: 1.1rem; letter-spacing: 0.05em;">
+                                {{ code }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
+                <button type="button" class="btn btn-cyber-secondary btn-sm" onclick="copyAllBackupCodes()">
+                    <i class="fas fa-copy me-1"></i> Copy All Codes
+                </button>
+                <button type="button" class="btn btn-cyber-secondary btn-sm" onclick="downloadBackupCodes()">
+                    <i class="fas fa-download me-1"></i> Download as .TXT
+                </button>
+                <button type="button" class="btn btn-cyber-secondary btn-sm" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i> Print Codes
+                </button>
+            </div>
+
+            <div class="text-center pt-3 border-top border-secondary">
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-cyber-primary px-5 py-2">
+                    <i class="fas fa-arrow-right me-2"></i> I Have Saved My Codes - Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const codesText = `SECURE PROJECT MANAGER - 2FA BACKUP CODES
+Generated: ${new Date().toISOString()}
+User: {{ current_user.username }}
+
+{% for code in backup_codes %}
+- {{ code }}
+{% endfor %}
+
+Keep these codes private. Each code is single-use for account recovery.`;
+
+function copyAllBackupCodes() {
+    navigator.clipboard.writeText(codesText).then(() => {
+        alert("Backup codes copied to clipboard!");
+    });
+}
+
+function downloadBackupCodes() {
+    const blob = new Blob([codesText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_recovery_codes_{{ current_user.username }}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

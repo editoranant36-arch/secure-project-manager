@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Secure Authentication{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-7 col-lg-5 col-xl-4">
+        <div class="cyber-card">
+            <div class="text-center mb-4">
+                <div class="brand-icon mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 class="fw-bold">Sign In</h3>
+                <p class="text-secondary small">Step 1: Enter your primary credentials</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label" for="identifier">Username or Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fas fa-user-shield"></i></span>
+                        <input type="text" class="form-control" id="identifier" name="identifier" value="{{ identifier or '' }}" placeholder="username or email" required autofocus autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label" for="loginPassword">Password</label>
+                        <a href="{{ url_for('auth.forgot_password') }}" class="small text-muted">Forgot password?</a>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fas fa-key"></i></span>
+                        <input type="password" class="form-control" id="loginPassword" name="password" placeholder="••••••••••••" required autocomplete="current-password">
+                        <button type="button" class="btn btn-outline-secondary toggle-password-btn" data-target="loginPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                    <label class="form-check-label text-secondary small" for="remember">
+                        Remember this workstation (Session Protected)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-cyber-primary w-100 py-2">
+                    <i class="fas fa-shield-halved me-1"></i> Authenticate & Proceed
+                </button>
+            </form>
+
+            <div class="mt-4 p-3 rounded bg-dark border border-secondary text-secondary small">
+                <i class="fas fa-shield-cat text-info me-1"></i> Two-Factor Authentication (TOTP) is enforced on all accounts following primary password verification.
+            </div>
+
+            <div class="text-center mt-4 pt-3 border-top border-secondary">
+                <span class="text-secondary small">Don't have an account?</span>
+                <a href="{{ url_for('auth.register') }}" class="small ms-1 fw-bold">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

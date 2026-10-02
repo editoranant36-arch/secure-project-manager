@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Security & 2FA Management{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-2 border-bottom border-secondary">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fas fa-shield-halved text-info me-2"></i>Security & 2FA Center</h2>
+        <p class="text-secondary small mb-0">Manage multi-factor authentication, emergency recovery codes, and active sessions.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- 2FA Status & Management -->
+    <div class="col-lg-6">
+        <div class="cyber-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon emerald">
+                    <i class="fas fa-mobile-screen-button"></i>
+                </div>
+                <span class="badge-cyber emerald"><i class="fas fa-check-circle"></i> Active & Enforced</span>
+            </div>
+
+            <h4 class="fw-bold mb-1">Two-Factor Authentication</h4>
+            <p class="text-secondary small mb-4">
+                Google/Microsoft Authenticator TOTP is protecting your login and project operations.
+            </p>
+
+            <div class="p-3 rounded bg-dark border border-secondary mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small">Algorithm:</span>
+                    <span class="font-monospace small text-info">RFC 6238 TOTP (SHA-1 30s)</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small">Secret Storage:</span>
+                    <span class="font-monospace small text-success">Fernet AES-128-CBC Encrypted</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Replay Protection:</span>
+                    <span class="badge-cyber cyan small">Enabled</span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-cyber-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#reEnrollModal">
+                    <i class="fas fa-qrcode me-1"></i> Re-enroll Authenticator
+                </button>
+                <button type="button" class="btn btn-cyber-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#regenBackupCodesModal">
+                    <i class="fas fa-key me-1"></i> Regenerate Backup Codes ({{ user.remaining_backup_codes_count() }} left)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Sessions Overview -->
+    <div class="col-lg-6">
+        <div class="cyber-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-laptop-code text-info me-2"></i>Active Workstations ({{ sessions|length }})</h5>
+                <form method="POST" action="{{ url_for('security.revoke_others_route') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-cyber-danger btn-sm" onclick="return confirm('Revoke all other active sessions?');">
+                        <i class="fas fa-power-off me-1"></i> Revoke Others
+                    </button>
+                </form>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                {% for s in sessions %}
+                    <div class="p-3 rounded bg-dark border {% if s.session_token == current_token %}border-info{% else %}border-secondary{% endif %} d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fas fa-desktop {% if s.session_token == current_token %}text-info{% else %}text-secondary{% endif %}"></i>
+                                <span class="fw-bold small font-monospace">{{ s.ip_address }}</span>
+                                {% if s.session_token == current_token %}
+                                    <span class="badge-cyber cyan small">Current Session</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small text-truncate" style="max-width: 320px;">
+                                {{ s.user_agent }}
+                            </div>
+                            <div class="text-muted small" style="font-size: 0.75rem;">
+                                Started: {{ s.created_at | datetimeformat }}
+                            </div>
+                        </div>
+
+                        {% if s.session_token != current_token %}
+                            <form method="POST" action="{{ url_for('security.revoke_session_route', session_id=s.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Revoke session">
+                                    <i class="fas fa-xmark"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Security Audit Log Table -->
+<div class="cyber-card">
+    <div class="cyber-card-header">
+        <h5 class="fw-bold mb-0"><i class="fas fa-list-check text-info me-2"></i>Account Security Audit Logs</h5>
+        <span class="small text-muted">Tamper-evident chronological record</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-cyber align-middle">
+            <thead>
+                <tr>
+                    <th>Event Type</th>
+                    <th>Outcome</th>
+                    <th>IP Address</th>
+                    <th>Details</th>
+                    <th>Timestamp (UTC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in activity_logs %}
+                    <tr>
+                        <td class="font-monospace fw-bold small text-info">{{ log.event_type }}</td>
+                        <td>
+                            {% if log.outcome == 'SUCCESS' %}
+                                <span class="badge-cyber emerald small"><i class="fas fa-check"></i> SUCCESS</span>
+                            {% elif log.outcome == 'FAILURE' %}
+                                <span class="badge-cyber rose small"><i class="fas fa-xmark"></i> FAILURE</span>
+                            {% else %}
+                                <span class="badge-cyber small bg-warning text-dark">{{ log.outcome }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="font-monospace small text-muted">{{ log.ip_address }}</td>
+                        <td class="text-secondary small">{{ log.details or '-' }}</td>
+                        <td class="text-muted small">{{ log.timestamp | datetimeformat }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Re-enroll Authenticator (Requires Password) -->
+<div class="modal fade" id="reEnrollModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('security.request_re_enroll') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-shield-halved text-warning me-2"></i>Verify Password to Re-enroll 2FA</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary small mb-3">To pair a new device or authenticator app, please confirm your current account password.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Current Master Password</label>
+                        <input type="password" name="password" class="form-control" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-cyber-primary">Proceed to QR Code</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Regenerate Backup Codes (Requires Password) -->
+<div class="modal fade" id="regenBackupCodesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('security.regenerate_backup_codes') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key text-warning me-2"></i>Regenerate Backup Recovery Codes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert-cyber alert-cyber-warning mb-3">
+                        <small>Generating new backup recovery codes will immediately invalidate any previous codes!</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Master Password</label>
+                        <input type="password" name="password" class="form-control" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-cyber-primary">Generate 8 Fresh Codes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

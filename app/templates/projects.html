@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}My Projects - Project Vault{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fas fa-folder-open text-info me-2"></i>My Project Vault</h2>
+        <p class="text-secondary small mb-0">Browse, organize, version, and manage your isolated project repositories.</p>
+    </div>
+    <a href="{{ url_for('projects.upload_project') }}" class="btn btn-cyber-primary">
+        <i class="fas fa-cloud-arrow-up"></i> Upload New Project
+    </a>
+</div>
+
+<!-- Search, Filter & Sort Bar -->
+<div class="cyber-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('projects.list_projects') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fas fa-magnifying-glass"></i></span>
+                <input type="text" class="form-control" name="search" id="projectSearch" value="{{ search or '' }}" placeholder="Search by project name or description...">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" name="category" onchange="this.form.submit()">
+                <option value="All" {% if not category or category == 'All' %}selected{% endif %}>All Categories</option>
+                {% for cat in user_categories %}
+                    <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" name="sort" onchange="this.form.submit()">
+                <option value="updated_at_desc" {% if sort_by == 'updated_at_desc' %}selected{% endif %}>Last Modified (Newest)</option>
+                <option value="created_at_desc" {% if sort_by == 'created_at_desc' %}selected{% endif %}>Date Created (Newest)</option>
+                <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+            </select>
+        </div>
+
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-cyber-secondary w-100">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Projects Cards Grid -->
+{% if projects %}
+    <div class="row g-4 mb-4">
+        {% for project in projects %}
+            <div class="col-md-6 col-lg-4 project-item" data-name="{{ project.project_name }}" data-desc="{{ project.description }}" data-category="{{ project.category }}">
+                <div class="cyber-card h-100 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-secondary">{{ project.category }}</span>
+                        <span class="badge-cyber cyan font-monospace small">v{{ project.version }}</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-2">
+                        <a href="{{ url_for('projects.project_details', project_id=project.id) }}" class="text-light text-decoration-none">
+                            {{ project.project_name }}
+                        </a>
+                    </h5>
+
+                    <p class="text-secondary small flex-grow-1 mb-3 text-truncate-2" style="min-height: 2.5rem;">
+                        {{ project.description or 'No description provided.' }}
+                    </p>
+
+                    <div class="p-2 rounded bg-dark border border-secondary mb-3 small text-muted font-monospace d-flex justify-content-between">
+                        <span><i class="fas fa-file-code text-info me-1"></i> {{ project.file_count() }} files</span>
+                        <span><i class="fas fa-database text-warning me-1"></i> {{ project.total_size() | filesizeformat }}</span>
+                    </div>
+
+                    <div class="text-muted small mb-3">
+                        <div><i class="fas fa-clock text-secondary me-1"></i> Updated: {{ project.updated_at | datetimeformat }}</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary">
+                        <a href="{{ url_for('projects.project_details', project_id=project.id) }}" class="btn btn-cyber-secondary btn-sm">
+                            <i class="fas fa-eye me-1"></i> View Details
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+                                <li>
+                                    <a class="dropdown-item text-light" href="{{ url_for('projects.download_project_archive', project_id=project.id) }}">
+                                        <i class="fas fa-file-zipper text-info me-2"></i> Download as ZIP
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-light" href="{{ url_for('projects.project_details', project_id=project.id) }}">
+                                        <i class="fas fa-pen-to-square text-warning me-2"></i> Edit Project
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider border-secondary"></li>
+                                <li>
+                                    <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteProjectModal{{ project.id }}">
+                                        <i class="fas fa-trash me-2"></i> Delete Project
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteProjectModal{{ project.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-danger"><i class="fas fa-triangle-exclamation me-2"></i>Confirm Project Deletion</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to permanently delete <strong>{{ project.project_name }}</strong>?</p>
+                            <p class="text-secondary small mb-0">This will remove all <strong>{{ project.file_count() }}</strong> uploaded files and version history permanently from your secure storage. This action cannot be undone.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form method="POST" action="{{ url_for('projects.delete_project_route', project_id=project.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-cyber-danger">
+                                    <i class="fas fa-trash me-1"></i> Yes, Delete Project
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+        <nav class="d-flex justify-content-center">
+            <ul class="pagination pagination-sm">
+                {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-info border-secondary" href="{{ url_for('projects.list_projects', page=pagination.prev_num, search=search, category=category, sort=sort_by) }}">&laquo; Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for p in pagination.iter_pages() %}
+                    {% if p %}
+                        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                            <a class="page-link {% if p == pagination.page %}bg-primary border-primary text-white{% else %}bg-dark text-secondary border-secondary{% endif %}" href="{{ url_for('projects.list_projects', page=p, search=search, category=category, sort=sort_by) }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-info border-secondary" href="{{ url_for('projects.list_projects', page=pagination.next_num, search=search, category=category, sort=sort_by) }}">Next &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+{% else %}
+    <div class="cyber-card text-center py-5">
+        <i class="fas fa-folder-open fs-1 text-muted mb-3 d-block"></i>
+        <h4 class="fw-bold">No Projects Found</h4>
+        <p class="text-secondary small mb-4">
+            {% if search or (category and category != 'All') %}
+                No projects matched your search criteria. Try resetting the filters.
+            {% else %}
+                Your project vault is currently empty. Get started by uploading your first project!
+            {% endif %}
+        </p>
+        <a href="{{ url_for('projects.upload_project') }}" class="btn btn-cyber-primary">
+            <i class="fas fa-cloud-arrow-up"></i> Upload New Project
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Security & Project Overview{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-2 border-bottom border-secondary">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="fw-bold mb-0">Welcome back, {{ current_user.full_name }}</h2>
+            <span class="badge-cyber emerald"><i class="fas fa-shield-check"></i> 2FA Active</span>
+        </div>
+        <p class="text-secondary small mb-0">Your workstation session is verified and encrypted at rest.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('projects.upload_project') }}" class="btn btn-cyber-primary">
+            <i class="fas fa-cloud-arrow-up"></i> Upload New Project
+        </a>
+        <a href="{{ url_for('security.index') }}" class="btn btn-cyber-secondary">
+            <i class="fas fa-user-shield"></i> Security Settings
+        </a>
+    </div>
+</div>
+
+<!-- Stat Metric Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="cyber-card stat-card">
+            <div class="stat-icon cyan">
+                <i class="fas fa-folder-tree"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ projects_count }}</div>
+                <div class="stat-label">Total Projects</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="cyber-card stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-file-code"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ total_files }}</div>
+                <div class="stat-label">Uploaded Files</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="cyber-card stat-card">
+            <div class="stat-icon emerald">
+                <i class="fas fa-hard-drive"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ storage_used | filesizeformat }}</div>
+                <div class="stat-label">Storage Used</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="cyber-card stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-key"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ current_user.remaining_backup_codes_count() }}</div>
+                <div class="stat-label">Backup Codes Left</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Storage Quota Progress Bar -->
+<div class="cyber-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small fw-bold text-secondary text-uppercase"><i class="fas fa-server text-info me-2"></i>Storage Quota Consumption</span>
+        <span class="small font-monospace text-info">{{ storage_used | filesizeformat }} / {{ quota_limit | filesizeformat }} ({{ storage_percent }}%)</span>
+    </div>
+    <div class="progress-cyber">
+        <div class="progress-cyber-bar" role="progressbar" style="width: {{ [storage_percent, 100]|min }}%;" aria-valuenow="{{ storage_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Uploaded Projects -->
+    <div class="col-lg-7">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <h5 class="fw-bold mb-0"><i class="fas fa-clock-rotate-left text-info me-2"></i>Recent Projects</h5>
+                <a href="{{ url_for('projects.list_projects') }}" class="small fw-bold">View All ({{ projects_count }}) &rarr;</a>
+            </div>
+
+            {% if recent_projects %}
+                <div class="d-flex flex-column gap-3">
+                    {% for project in recent_projects %}
+                        <div class="p-3 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center hover-glow">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h6 class="fw-bold mb-0">
+                                        <a href="{{ url_for('projects.project_details', project_id=project.id) }}" class="text-light text-decoration-none">
+                                            {{ project.project_name }}
+                                        </a>
+                                    </h6>
+                                    <span class="badge-cyber cyan font-monospace small">v{{ project.version }}</span>
+                                    <span class="badge bg-secondary small">{{ project.category }}</span>
+                                </div>
+                                <div class="text-muted small">
+                                    <span><i class="fas fa-file me-1"></i> {{ project.file_count() }} files</span>
+                                    <span class="ms-3"><i class="fas fa-database me-1"></i> {{ project.total_size() | filesizeformat }}</span>
+                                    <span class="ms-3"><i class="fas fa-calendar me-1"></i> {{ project.updated_at | datetimeformat }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('projects.project_details', project_id=project.id) }}" class="btn btn-cyber-secondary btn-sm">
+                                    <i class="fas fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fas fa-folder-open fs-1 text-muted mb-3 d-block"></i>
+                    <p class="mb-3">You haven't created any projects yet.</p>
+                    <a href="{{ url_for('projects.upload_project') }}" class="btn btn-cyber-primary btn-sm">
+                        <i class="fas fa-plus"></i> Upload Your First Project
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Security Activity Stream -->
+    <div class="col-lg-5">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <h5 class="fw-bold mb-0"><i class="fas fa-shield-virus text-warning me-2"></i>Security Audit Trail</h5>
+                <a href="{{ url_for('security.index') }}" class="small fw-bold">Full Trail &rarr;</a>
+            </div>
+
+            {% if recent_activity %}
+                <div class="timeline">
+                    {% for log in recent_activity %}
+                        <div class="timeline-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small {% if log.outcome == 'SUCCESS' %}text-info{% elif log.outcome == 'FAILURE' %}text-danger{% else %}text-warning{% endif %}">
+                                    {{ log.event_type }}
+                                </span>
+                                <span class="text-muted" style="font-size: 0.75rem;">{{ log.timestamp | datetimeformat }}</span>
+                            </div>
+                            <div class="text-secondary small">{{ log.details or '-' }}</div>
+                            <div class="font-monospace text-muted mt-1" style="font-size: 0.7rem;">IP: {{ log.ip_address }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted small">No security events recorded yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Account Profile - Secure Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-2">
+    <div class="col-lg-8 col-xl-7">
+        <div class="cyber-card mb-4">
+            <div class="cyber-card-header mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1"><i class="fas fa-id-card text-info me-2"></i>Account Profile</h3>
+                    <p class="text-secondary small mb-0">Manage your identity and authentication credentials.</p>
+                </div>
+            </div>
+
+            <!-- Profile Details Form -->
+            <form method="POST" action="{{ url_for('security.profile') }}" class="mb-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control font-monospace bg-dark" value="{{ user.username }}" readonly disabled>
+                    <div class="form-text text-muted small">Username cannot be changed once established.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="fullName">Full Name</label>
+                    <input type="text" class="form-control" id="fullName" name="full_name" value="{{ user.full_name }}" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="emailAddr">Email Address</label>
+                    <input type="email" class="form-control" id="emailAddr" name="email" value="{{ user.email }}" required>
+                </div>
+
+                <button type="submit" class="btn btn-cyber-primary">
+                    <i class="fas fa-save me-1"></i> Update Profile
+                </button>
+            </form>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="cyber-card">
+            <h5 class="fw-bold mb-3"><i class="fas fa-key text-warning me-2"></i>Change Master Password</h5>
+            <p class="text-secondary small mb-4">Updating your password re-hashes it using state-of-the-art Argon2id.</p>
+
+            <form method="POST" action="{{ url_for('security.change_password') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label" for="currPass">Current Password</label>
+                    <input type="password" class="form-control" id="currPass" name="current_password" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="passwordInput">New Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="passwordInput" name="new_password" required>
+                        <button type="button" class="btn btn-outline-secondary toggle-password-btn" data-target="passwordInput">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <!-- Password Strength Bar -->
+                    <div class="strength-bar">
+                        <div class="strength-bar-fill" id="strengthBarFill"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <span class="small text-muted">Strength: <strong id="strengthText" class="text-secondary">-</strong></span>
+                        <span class="small text-muted">Min 8 chars, uppercase, digit, symbol</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="confirmPass">Confirm New Password</label>
+                    <input type="password" class="form-control" id="confirmPass" name="confirm_password" required>
+                </div>
+
+                <button type="submit" class="btn btn-cyber-secondary">
+                    <i class="fas fa-shield me-1"></i> Update Master Password
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
