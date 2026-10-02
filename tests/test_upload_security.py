@@ -89,3 +89,31 @@ def test_path_traversal_sanitization(client, test_user_with_2fa, app):
         assert path.exists()
         # Verify it stays strictly within the app's UPLOAD_FOLDER
         assert str(app.config['UPLOAD_FOLDER']) in str(path)
+
+def test_upload_extensionless_and_code_files(client, test_user_with_2fa, app):
+    login_with_2fa(client, test_user_with_2fa)
+
+    with app.app_context():
+        from app.extensions import db
+        p = Project(owner_id=test_user_with_2fa.id, project_name='Multi Format Test', version='1.0.0')
+        db.session.add(p)
+        db.session.commit()
+        pid = p.id
+
+    data = {
+        'files': [
+            (io.BytesIO(b"FROM python:3.12-slim\n"), 'Dockerfile'),
+            (io.BytesIO(b'{"name": "test"}'), 'package.json')
+        ]
+    }
+
+    res = client.post(f'/projects/{pid}/upload-file', data=data, content_type='multipart/form-data', follow_redirects=True)
+    assert res.status_code == 200
+    assert b"Successfully uploaded 2 file(s)" in res.data
+
+    with app.app_context():
+        files = ProjectFile.query.filter_by(project_id=pid).all()
+        assert len(files) == 2
+        names = {f.original_filename for f in files}
+        assert 'Dockerfile' in names
+        assert 'package.json' in names

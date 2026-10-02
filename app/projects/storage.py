@@ -46,6 +46,11 @@ def save_uploaded_file(file_storage, user_id: int) -> tuple[str, str, int, str]:
     # Stream write while calculating SHA-256 and byte size
     sha256 = hashlib.sha256()
     size = 0
+    try:
+        file_storage.seek(0)
+    except Exception:
+        pass
+
     with open(target_path, 'wb') as f:
         while True:
             chunk = file_storage.read(64 * 1024)

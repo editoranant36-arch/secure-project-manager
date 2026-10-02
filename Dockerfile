@@ -34,4 +34,4 @@ ENV FLASK_ENV=production
 ENV PORT=5000
 
 # Run with Gunicorn WSGI server
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --threads 2 --worker-class gthread run:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --threads 2 --timeout 120 --worker-class gthread run:app"]

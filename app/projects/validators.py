@@ -3,11 +3,26 @@ import mimetypes
 from flask import current_app
 
 def is_allowed_file(filename: str) -> bool:
-    """Check if file extension is allowed."""
-    if not filename or '.' not in filename:
+    """Check if file extension is allowed and not on the disallowed list."""
+    if not filename:
         return False
-    ext = filename.rsplit('.', 1)[1].lower()
-    allowed = current_app.config.get('ALLOWED_EXTENSIONS', set())
+    base_name = filename.strip()
+    
+    disallowed = current_app.config.get('DISALLOWED_EXTENSIONS', {
+        'exe', 'dll', 'so', 'dylib', 'bin', 'msi', 'bat', 'cmd', 'vbs', 'scr', 'com', 'pif'
+    })
+
+    if '.' not in base_name:
+        # Files without extension like Dockerfile, Makefile, LICENSE, README, Procfile
+        return base_name.lower() not in disallowed
+
+    ext = base_name.rsplit('.', 1)[1].lower()
+    if ext in disallowed:
+        return False
+
+    allowed = current_app.config.get('ALLOWED_EXTENSIONS')
+    if not allowed or '*' in allowed:
+        return True
     return ext in allowed
 
 def get_safe_mime_type(filename: str, provided_mime: str | None = None) -> str:

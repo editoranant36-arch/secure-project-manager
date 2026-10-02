@@ -81,7 +81,8 @@ def upload_file_to_project(project_id: int, user_id: int, file_storage) -> tuple
         return None, "No file selected."
 
     if not is_allowed_file(file_storage.filename):
-        return None, f"File type not permitted. Permitted types: {', '.join(sorted(file_storage._app_config if hasattr(file_storage, '_app_config') else ['zip', 'py', 'js', 'html', 'css', 'pdf', 'png', 'jpg']))}"
+        ext_display = file_storage.filename.rsplit('.', 1)[-1] if '.' in file_storage.filename else file_storage.filename
+        return None, f"File type not permitted: '{ext_display}'. Executables and scripts are restricted for security."
 
     user = User.query.get(user_id)
     # Check quota before saving

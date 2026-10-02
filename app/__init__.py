@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, jsonify, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import config_by_name
 from app.extensions import db, login_manager, csrf, limiter, migrate
 from app.models.user import User
@@ -137,5 +138,8 @@ def create_app(config_name: str | None = None) -> Flask:
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'INTERNAL_ERROR', 'message': 'An unexpected server error occurred'}), 500
         return render_template('error.html', code=500, title="Server Error", message="An unexpected error occurred. Our team has been notified."), 500
+
+    # Reverse proxy support (for Render, Cloudflare, Nginx HTTPS headers)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
     return app

@@ -94,19 +94,20 @@ def upload_project():
         # Upload files if attached
         uploaded_count = 0
         errors = []
-        if files:
-            for f in files:
-                if f and f.filename:
-                    file_obj, err = upload_file_to_project(project.id, current_user.id, f)
-                    if file_obj:
-                        uploaded_count += 1
-                    else:
-                        errors.append(f"{f.filename}: {err}")
+        valid_files = [f for f in files if f and f.filename] if files else []
+        for f in valid_files:
+            file_obj, err = upload_file_to_project(project.id, current_user.id, f)
+            if file_obj:
+                uploaded_count += 1
+            else:
+                errors.append(f"{f.filename}: {err}")
 
         if errors:
             flash(f"Project created with warnings: {'; '.join(errors)}", "warning")
-        else:
+        elif uploaded_count > 0:
             flash(f"Project '{project_name}' created successfully with {uploaded_count} file(s).", "success")
+        else:
+            flash(f"Project '{project_name}' created successfully.", "success")
 
         return redirect(url_for('projects.project_details', project_id=project.id))
 
@@ -165,22 +166,22 @@ def delete_project_route(project_id: int):
 @two_factor_required
 def upload_file_to_project_route(project_id: int):
     files = request.files.getlist('files')
-    if not files:
-        flash("No file was uploaded.", "warning")
+    valid_files = [f for f in files if f and f.filename] if files else []
+    if not valid_files:
+        flash("No file was selected for upload.", "warning")
         return redirect(url_for('projects.project_details', project_id=project_id))
 
     successes = 0
     errors = []
-    for f in files:
-        if f and f.filename:
-            file_obj, err = upload_file_to_project(project_id, current_user.id, f)
-            if file_obj:
-                successes += 1
-            else:
-                errors.append(f"{f.filename}: {err}")
+    for f in valid_files:
+        file_obj, err = upload_file_to_project(project_id, current_user.id, f)
+        if file_obj:
+            successes += 1
+        else:
+            errors.append(f"{f.filename}: {err}")
 
     if errors:
-        flash(f"Uploaded {successes} file(s). Errors: {'; '.join(errors)}", "warning")
+        flash(f"Uploaded {successes} file(s). Errors/Warnings: {'; '.join(errors)}", "warning")
     else:
         flash(f"Successfully uploaded {successes} file(s).", "success")
 

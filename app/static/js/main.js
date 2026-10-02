@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ['dragenter', 'dragover'].forEach(evt => {
             dropzone.addEventListener(evt, (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 dropzone.classList.add('dragover');
             });
         });
@@ -130,19 +131,28 @@ document.addEventListener('DOMContentLoaded', () => {
         ['dragleave', 'drop'].forEach(evt => {
             dropzone.addEventListener(evt, (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 dropzone.classList.remove('dragover');
             });
         });
 
         dropzone.addEventListener('drop', (e) => {
-            if (e.dataTransfer.files.length) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
                 renderFileList(fileInput.files);
             }
         });
 
-        dropzone.addEventListener('click', () => {
-            fileInput.click();
+        dropzone.addEventListener('click', (e) => {
+            if (e.target !== fileInput) {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('click', (e) => {
+            e.stopPropagation();
         });
 
         fileInput.addEventListener('change', () => {
